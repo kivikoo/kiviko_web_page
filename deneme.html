@@ -1,0 +1,844 @@
+<!DOCTYPE html>
+<html lang="tr" class="h-full bg-slate-950 text-slate-100">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ekspedisyon ve Seyahat Bütçe Planlayıcı</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        navy: { 800: '#0B192C', 900: '#1E3E62', 950: '#000F1D' },
+                        accent: { cyan: '#00D8F6', amber: '#FF9D00', emerald: '#10B981' }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #000F1D; }
+        ::-webkit-scrollbar-thumb { background: #1E3E62; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #00D8F6; }
+    </style>
+</head>
+<body class="h-full flex flex-col font-sans antialiased bg-slate-950 text-slate-100 selection:bg-cyan-500 selection:text-slate-950">
+
+    <!-- Üst Başlık / Navigasyon -->
+    <header class="bg-navy-950 border-b border-slate-800 sticky top-0 z-50 backdrop-blur-md bg-opacity-90">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-cyan-500 to-blue-600 flex items-center justify-center text-slate-950 font-bold shadow-lg shadow-cyan-500/20">
+                    <i class="fa-solid fa-compass text-xl"></i>
+                </div>
+                <div>
+                    <h1 class="text-lg sm:text-xl font-bold bg-gradient-to-r from-cyan-400 to-blue-400 bg-clip-text text-transparent">
+                        Seyahat & Ekspedisyon Planlayıcı
+                    </h1>
+                    <p class="text-xs text-slate-400 hidden sm:block">Deniz ve Karayolu Bütçe ve Lojistik Paneli</p>
+                </div>
+            </div>
+
+            <!-- Sekme Butonları (4 Sekme) -->
+            <div class="flex items-center space-x-2 overflow-x-auto py-2">
+                <button onclick="switchTab('rotterdam')" id="tab-btn-rotterdam" class="px-3 py-2 rounded-xl text-xs font-semibold transition-all duration-200 bg-cyan-500 text-slate-950 shadow-lg shadow-cyan-500/20 flex items-center space-x-1.5 whitespace-nowrap">
+                    <i class="fa-solid fa-ship"></i>
+                    <span>Rotterdam</span>
+                </button>
+                <button onclick="switchTab('italy')" id="tab-btn-italy" class="px-3 py-2 rounded-xl text-xs font-semibold transition-all duration-200 bg-slate-900 text-slate-400 border border-slate-800 hover:text-slate-100 flex items-center space-x-1.5 whitespace-nowrap">
+                    <i class="fa-solid fa-car"></i>
+                    <span>İtalya</span>
+                </button>
+                <button onclick="switchTab('greece')" id="tab-btn-greece" class="px-3 py-2 rounded-xl text-xs font-semibold transition-all duration-200 bg-slate-900 text-slate-400 border border-slate-800 hover:text-slate-100 flex items-center space-x-1.5 whitespace-nowrap">
+                    <i class="fa-solid fa-map-location"></i>
+                    <span>Yunanistan</span>
+                </button>
+                <button onclick="switchTab('spain')" id="tab-btn-spain" class="px-3 py-2 rounded-xl text-xs font-semibold transition-all duration-200 bg-slate-900 text-slate-400 border border-slate-800 hover:text-slate-100 flex items-center space-x-1.5 whitespace-nowrap">
+                    <i class="fa-solid fa-umbrella-beach"></i>
+                    <span>İspanya</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- TAB 1: ROTTERDAM TEKNE EKSPEDİSYONU -->
+    <main id="content-rotterdam" class="tab-content flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+            <div class="bg-slate-900/80 border border-slate-800 rounded-2xl p-5 relative overflow-hidden backdrop-blur-sm shadow-xl">
+                <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Tahmini Toplam Bütçe (€)</p>
+                <h3 id="stat-total-eur" class="text-2xl sm:text-3xl font-extrabold text-cyan-400 mt-2">€0</h3>
+                <p id="stat-total-try" class="text-xs text-slate-400 mt-1 font-medium">₺0 TL</p>
+            </div>
+            <div class="bg-slate-900/80 border border-slate-800 rounded-2xl p-5 relative overflow-hidden backdrop-blur-sm shadow-xl">
+                <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Günlük Ortalama Masraf</p>
+                <h3 id="stat-daily-cost" class="text-2xl sm:text-3xl font-extrabold text-slate-100 mt-2">€0</h3>
+                <p id="stat-daily-try" class="text-xs text-slate-400 mt-1 font-medium">₺0 / gün</p>
+            </div>
+            <div class="bg-slate-900/80 border border-slate-800 rounded-2xl p-5 relative overflow-hidden backdrop-blur-sm shadow-xl">
+                <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Km Başına Maliyet</p>
+                <h3 id="stat-cost-per-km" class="text-2xl sm:text-3xl font-extrabold text-amber-400 mt-2">€0.00</h3>
+                <p id="stat-cost-per-km-try" class="text-xs text-slate-400 mt-1 font-medium">₺0.00 / km</p>
+            </div>
+            <div class="bg-slate-900/80 border border-slate-800 rounded-2xl p-5 relative overflow-hidden backdrop-blur-sm shadow-xl">
+                <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Toplam Yakıt Miktarı</p>
+                <h3 id="stat-total-fuel" class="text-2xl sm:text-3xl font-extrabold text-emerald-400 mt-2">0 L</h3>
+                <p id="stat-fuel-cost" class="text-xs text-slate-400 mt-1 font-medium">Yakıt Bütçesi: €0</p>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+            <div class="lg:col-span-7 bg-slate-900/70 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-6">
+                <div class="flex items-center justify-between border-b border-slate-800 pb-4">
+                    <h2 class="text-lg font-bold text-slate-100">Canlı Bütçe Parametreleri (Marex 310)</h2>
+                    <button id="btn-reset" class="text-xs text-slate-400 hover:text-cyan-400 transition-colors"><i class="fa-solid fa-rotate-left"></i> Varsayılana Dön</button>
+                </div>
+                <div class="space-y-5 text-sm">
+                    <div>
+                        <div class="flex justify-between items-center mb-2"><label class="text-slate-300 font-medium">Deniz Tipi Dizel Litre Fiyatı (€/L)</label><span id="val-fuel-price" class="text-cyan-400 font-bold">€1.85 / L</span></div>
+                        <input type="range" id="input-fuel-price" min="1.20" max="2.80" step="0.05" value="1.85" class="w-full h-2 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-cyan-400">
+                    </div>
+                    <div>
+                        <div class="flex justify-between items-center mb-2"><label class="text-slate-300 font-medium">Gidiş Tüketimi (Akıntıya Karşı)</label><span id="val-upstream-cons" class="text-cyan-400 font-bold">2.8 L/km</span></div>
+                        <input type="range" id="input-upstream-cons" min="2.0" max="4.0" step="0.1" value="2.8" class="w-full h-2 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-cyan-400">
+                    </div>
+                    <div>
+                        <div class="flex justify-between items-center mb-2"><label class="text-slate-300 font-medium">Dönüş Tüketimi (Akıntı Yönünde)</label><span id="val-downstream-cons" class="text-cyan-400 font-bold">2.0 L/km</span></div>
+                        <input type="range" id="input-downstream-cons" min="1.4" max="3.0" step="0.1" value="2.0" class="w-full h-2 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-cyan-400">
+                    </div>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div><label class="block text-slate-300 font-medium mb-1">Gidiş Süresi (Gün)</label><input type="number" id="input-outbound-days" value="45" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-100"></div>
+                        <div><label class="block text-slate-300 font-medium mb-1">Dönüş Süresi (Gün)</label><input type="number" id="input-return-days" value="20" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-100"></div>
+                    </div>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div><label class="block text-slate-300 font-medium mb-1">Günlük Marina Ücreti (€)</label><input type="number" id="input-marina-fee" value="55" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-100"></div>
+                        <div><label class="block text-slate-300 font-medium mb-1">Günlük Yaşam (€)</label><input type="number" id="input-living-cost" value="70" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-100"></div>
+                    </div>
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                        <div><label class="block text-slate-300 font-medium mb-1">Kanal & İzinler (€)</label><input type="number" id="input-permits" value="1200" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-100"></div>
+                        <div><label class="block text-slate-300 font-medium mb-1">Bakım & Yedek (€)</label><input type="number" id="input-maintenance" value="2500" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-100"></div>
+                        <div><label class="block text-slate-300 font-medium mb-1">EUR / TRY Kuru (₺)</label><input type="number" id="input-eur-try" value="40.0" step="0.5" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-100"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="lg:col-span-5 bg-slate-900/70 border border-slate-800 rounded-2xl p-6 shadow-xl flex flex-col justify-between">
+                <div>
+                    <h2 class="text-lg font-bold text-slate-100 border-b border-slate-800 pb-4 mb-4">Bütçe Dağılım Grafiği</h2>
+                    <div class="relative w-full aspect-square max-w-[320px] mx-auto"><canvas id="costChart"></canvas></div>
+                </div>
+                <div class="mt-6 pt-4 border-t border-slate-800 space-y-2 text-xs text-slate-400">
+                    <div class="flex justify-between items-center"><span>Yakıt</span><span id="chart-legend-fuel" class="font-bold text-slate-200">€0</span></div>
+                    <div class="flex justify-between items-center"><span>Marina</span><span id="chart-legend-mooring" class="font-bold text-slate-200">€0</span></div>
+                    <div class="flex justify-between items-center"><span>Yaşam</span><span id="chart-legend-living" class="font-bold text-slate-200">€0</span></div>
+                    <div class="flex justify-between items-center"><span>Bakım</span><span id="chart-legend-maint" class="font-bold text-slate-200">€0</span></div>
+                    <div class="flex justify-between items-center"><span>Kanal</span><span id="chart-legend-permits" class="font-bold text-slate-200">€0</span></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-slate-900/70 border border-slate-800 rounded-2xl p-6 shadow-xl">
+            <h2 class="text-lg font-bold text-slate-100 mb-2">Detaylı Masraf Kalemleri</h2>
+            <div class="overflow-x-auto">
+                <table class="w-full text-left text-sm text-slate-300">
+                    <thead class="bg-slate-950 text-slate-400 uppercase text-xs">
+                        <tr><th class="py-3 px-4">Kategori</th><th class="py-3 px-4">Hesaplama Temeli</th><th class="py-3 px-4 text-right">Maliyet (€)</th><th class="py-3 px-4 text-right">Maliyet (₺ TL)</th></tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-800/60 text-xs sm:text-sm">
+                        <tr><td class="py-3 px-4 font-semibold">Gidiş Yakıtı (Tuna)</td><td id="tbl-fuel-outbound-basis" class="py-3 px-4 text-slate-400">-</td><td id="tbl-fuel-outbound-eur" class="py-3 px-4 text-right">€0</td><td id="tbl-fuel-outbound-try" class="py-3 px-4 text-right text-slate-400">₺0</td></tr>
+                        <tr><td class="py-3 px-4 font-semibold">Dönüş Yakıtı (Ren/Tuna)</td><td id="tbl-fuel-return-basis" class="py-3 px-4 text-slate-400">-</td><td id="tbl-fuel-return-eur" class="py-3 px-4 text-right">€0</td><td id="tbl-fuel-return-try" class="py-3 px-4 text-right text-slate-400">₺0</td></tr>
+                        <tr><td class="py-3 px-4 font-semibold">Marina & Bağlama</td><td id="tbl-mooring-basis" class="py-3 px-4 text-slate-400">-</td><td id="tbl-mooring-eur" class="py-3 px-4 text-right">€0</td><td id="tbl-mooring-try" class="py-3 px-4 text-right text-slate-400">₺0</td></tr>
+                        <tr><td class="py-3 px-4 font-semibold">Yemek & Yaşam</td><td id="tbl-living-basis" class="py-3 px-4 text-slate-400">-</td><td id="tbl-living-eur" class="py-3 px-4 text-right">€0</td><td id="tbl-living-try" class="py-3 px-4 text-right text-slate-400">₺0</td></tr>
+                        <tr><td class="py-3 px-4 font-semibold">Kanal & İzinler</td><td class="py-3 px-4 text-slate-400">Vinyetler</td><td id="tbl-permits-eur" class="py-3 px-4 text-right">€0</td><td id="tbl-permits-try" class="py-3 px-4 text-right text-slate-400">₺0</td></tr>
+                        <tr><td class="py-3 px-4 font-semibold">Bakım & Yedek</td><td class="py-3 px-4 text-slate-400">Periyodik</td><td id="tbl-maint-eur" class="py-3 px-4 text-right">€0</td><td id="tbl-maint-try" class="py-3 px-4 text-right text-slate-400">₺0</td></tr>
+                    </tbody>
+                    <tfoot class="border-t-2 border-slate-700 font-bold">
+                        <tr><td class="py-3 px-4 text-cyan-400" colspan="2">GENEL TOPLAM</td><td id="tbl-grand-eur" class="py-3 px-4 text-right text-cyan-400">€0</td><td id="tbl-grand-try" class="py-3 px-4 text-right text-cyan-400">₺0</td></tr>
+                    </tfoot>
+                </table>
+            </div>
+        </div>
+    </main>
+
+    <!-- TAB 2: İTALYA KARAYOLU VE FERİBOT ROTASI -->
+    <main id="content-italy" class="tab-content hidden flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+        <div class="bg-slate-900/80 border border-slate-800 rounded-2xl p-4 flex flex-col sm:flex-row items-center justify-between gap-4">
+            <h3 class="text-sm font-bold text-slate-100"><i class="fa-solid fa-map-location-dot text-cyan-400 mr-2"></i> İtalya Rota Seçimi</h3>
+            <select id="i-route-select" onchange="changeItalyRoute()" class="bg-slate-950 border border-slate-700 text-cyan-400 font-semibold rounded-xl px-4 py-2 text-sm focus:outline-none">
+                <option value="puglia">Güney İtalya & Puglia (15 Gün / 3.200 km)</option>
+                <option value="renaissance">Via Renaissance - Toskana & Roma (20 Gün / 3.600 km)</option>
+                <option value="trinacria">Via Trinacria - Sicilia Turu (16 Gün / 4.100 km)</option>
+            </select>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+            <div class="bg-slate-900/80 border border-slate-800 rounded-2xl p-5 relative overflow-hidden backdrop-blur-sm shadow-xl">
+                <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">İtalya Toplam Bütçe (€)</p>
+                <h3 id="i-stat-total-eur" class="text-2xl sm:text-3xl font-extrabold text-cyan-400 mt-2">€0</h3>
+                <p id="i-stat-total-try" class="text-xs text-slate-400 mt-1 font-medium">₺0 TL</p>
+            </div>
+            <div class="bg-slate-900/80 border border-slate-800 rounded-2xl p-5 relative overflow-hidden backdrop-blur-sm shadow-xl">
+                <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Sürüş Mesafesi</p>
+                <h3 id="i-stat-dist" class="text-2xl sm:text-3xl font-extrabold text-slate-100 mt-2">3,200 km</h3>
+                <p class="text-xs text-slate-400 mt-1 font-medium">Karayolu + Feribot</p>
+            </div>
+            <div class="bg-slate-900/80 border border-slate-800 rounded-2xl p-5 relative overflow-hidden backdrop-blur-sm shadow-xl">
+                <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Konaklama Süresi</p>
+                <h3 id="i-stat-nights" class="text-2xl sm:text-3xl font-extrabold text-amber-400 mt-2">12 Gece</h3>
+                <p id="i-stat-days-desc" class="text-xs text-slate-400 mt-1 font-medium">Toplam 15 Gün</p>
+            </div>
+            <div class="bg-slate-900/80 border border-slate-800 rounded-2xl p-5 relative overflow-hidden backdrop-blur-sm shadow-xl">
+                <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Benzin & Feribot</p>
+                <h3 id="i-stat-fuel-cost" class="text-2xl sm:text-3xl font-extrabold text-emerald-400 mt-2">€0</h3>
+                <p class="text-xs text-slate-400 mt-1 font-medium">Ulaşım Toplamı</p>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+            <div class="lg:col-span-7 bg-slate-900/70 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-6">
+                <h2 class="text-lg font-bold text-slate-100 border-b border-slate-800 pb-4">İtalya Seyahat Parametreleri</h2>
+                <div class="space-y-5 text-sm">
+                    <div>
+                        <div class="flex justify-between items-center mb-2"><label class="text-slate-300 font-medium">Benzin Litre Fiyatı (€/L)</label><span id="i-val-fuel-price" class="text-cyan-400 font-bold">€1.85 / L</span></div>
+                        <input type="range" id="i-input-fuel-price" min="1.40" max="2.50" step="0.05" value="1.85" class="w-full h-2 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-cyan-400">
+                    </div>
+                    <div>
+                        <div class="flex justify-between items-center mb-2"><label class="text-slate-300 font-medium">Araç Yakıt Tüketimi (L / 100 km)</label><span id="i-val-consumption" class="text-cyan-400 font-bold">8.5 L</span></div>
+                        <input type="range" id="i-input-consumption" min="5.0" max="14.0" step="0.5" value="8.5" class="w-full h-2 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-cyan-400">
+                    </div>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div><label class="block text-slate-300 font-medium mb-1">Gecelik Otel Bütçesi (€)</label><input type="number" id="i-input-hotel" value="120" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-100"></div>
+                        <div><label class="block text-slate-300 font-medium mb-1">Günlük Yemek (€ / Gün)</label><input type="number" id="i-input-food" value="90" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-100"></div>
+                    </div>
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                        <div><label class="block text-slate-300 font-medium mb-1">Konaklama Gece</label><input type="number" id="i-input-nights" value="12" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-100"></div>
+                        <div><label class="block text-slate-300 font-medium mb-1">Feribot (G-D €)</label><input type="number" id="i-input-ferry" value="750" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-100"></div>
+                        <div><label class="block text-slate-300 font-medium mb-1">EUR/TRY (₺)</label><input type="number" id="i-input-eur-try" value="40.0" step="0.5" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-100"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="lg:col-span-5 bg-slate-900/70 border border-slate-800 rounded-2xl p-6 shadow-xl flex flex-col justify-between">
+                <div>
+                    <h2 class="text-lg font-bold text-slate-100 border-b border-slate-800 pb-4 mb-4">İtalya Bütçe Dağılımı</h2>
+                    <div class="relative w-full aspect-square max-w-[320px] mx-auto"><canvas id="italyChart"></canvas></div>
+                </div>
+                <div class="mt-6 pt-4 border-t border-slate-800 space-y-2 text-xs text-slate-400">
+                    <div class="flex justify-between items-center"><span>Benzin & Otoban</span><span id="i-legend-fuel" class="font-bold text-slate-200">€0</span></div>
+                    <div class="flex justify-between items-center"><span>Feribot</span><span id="i-legend-ferry" class="font-bold text-slate-200">€0</span></div>
+                    <div class="flex justify-between items-center"><span>Konaklama</span><span id="i-legend-hotel" class="font-bold text-slate-200">€0</span></div>
+                    <div class="flex justify-between items-center"><span>Yemek</span><span id="i-legend-food" class="font-bold text-slate-200">€0</span></div>
+                    <div class="flex justify-between items-center"><span>Müze & Diğer</span><span id="i-legend-other" class="font-bold text-slate-200">€0</span></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-slate-900/70 border border-slate-800 rounded-2xl p-6 shadow-xl">
+            <h2 class="text-lg font-bold text-slate-100 mb-2">İtalya Detaylı Masraf Kalemleri</h2>
+            <div class="overflow-x-auto">
+                <table class="w-full text-left text-sm text-slate-300">
+                    <thead class="bg-slate-950 text-slate-400 uppercase text-xs">
+                        <tr><th class="py-3 px-4">Kategori</th><th class="py-3 px-4">Hesaplama Temeli</th><th class="py-3 px-4 text-right">Maliyet (€)</th><th class="py-3 px-4 text-right">Maliyet (₺ TL)</th></tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-800/60 text-xs sm:text-sm">
+                        <tr><td class="py-3 px-4 font-semibold">Benzin & Tüketim</td><td id="i-tbl-fuel-basis" class="py-3 px-4 text-slate-400">-</td><td id="i-tbl-fuel-eur" class="py-3 px-4 text-right">€0</td><td id="i-tbl-fuel-try" class="py-3 px-4 text-right text-slate-400">₺0</td></tr>
+                        <tr><td class="py-3 px-4 font-semibold">Otoban Ücretleri</td><td class="py-3 px-4 text-slate-400">Yunanistan + Autostrada</td><td id="i-tbl-tolls-eur" class="py-3 px-4 text-right">€0</td><td id="i-tbl-tolls-try" class="py-3 px-4 text-right text-slate-400">₺0</td></tr>
+                        <tr><td class="py-3 px-4 font-semibold">Gece Feribotu</td><td class="py-3 px-4 text-slate-400">Igoumenitsa ↔ Bari / Ancona</td><td id="i-tbl-ferry-eur" class="py-3 px-4 text-right">€0</td><td id="i-tbl-ferry-try" class="py-3 px-4 text-right text-slate-400">₺0</td></tr>
+                        <tr><td class="py-3 px-4 font-semibold">Otel Konaklaması</td><td id="i-tbl-hotel-basis" class="py-3 px-4 text-slate-400">-</td><td id="i-tbl-hotel-eur" class="py-3 px-4 text-right">€0</td><td id="i-tbl-hotel-try" class="py-3 px-4 text-right text-slate-400">₺0</td></tr>
+                        <tr><td class="py-3 px-4 font-semibold">Yeme & İçme</td><td id="i-tbl-food-basis" class="py-3 px-4 text-slate-400">-</td><td id="i-tbl-food-eur" class="py-3 px-4 text-right">€0</td><td id="i-tbl-food-try" class="py-3 px-4 text-right text-slate-400">₺0</td></tr>
+                        <tr><td class="py-3 px-4 font-semibold">Müze & Sigorta</td><td class="py-3 px-4 text-slate-400">Yeşil Kart dahil</td><td id="i-tbl-other-eur" class="py-3 px-4 text-right">€0</td><td id="i-tbl-other-try" class="py-3 px-4 text-right text-slate-400">₺0</td></tr>
+                    </tbody>
+                    <tfoot class="border-t-2 border-slate-700 font-bold">
+                        <tr><td class="py-3 px-4 text-cyan-400" colspan="2">İTALYA TOPLAM</td><td id="i-tbl-grand-eur" class="py-3 px-4 text-right text-cyan-400">€0</td><td id="i-tbl-grand-try" class="py-3 px-4 text-right text-cyan-400">₺0</td></tr>
+                    </tfoot>
+                </table>
+            </div>
+        </div>
+
+        <!-- İTALYA GÜN GÜN ŞEHİR PROGRAMI -->
+        <div class="bg-slate-900/70 border border-slate-800 rounded-2xl p-6 shadow-xl">
+            <h2 class="text-lg font-bold text-slate-100 mb-4"><i class="fa-solid fa-route text-cyan-400 mr-2"></i> 15 Günlük Güney İtalya & Puglia Yol Programı</h2>
+            <div class="overflow-x-auto">
+                <table class="w-full text-left text-sm text-slate-300">
+                    <thead class="bg-slate-950 text-slate-400 uppercase text-xs">
+                        <tr><th class="py-3 px-4 rounded-l-xl">Gün</th><th class="py-3 px-4">Rota</th><th class="py-3 px-4">Konaklama</th><th class="py-3 px-4 rounded-r-xl">Önemli Notlar</th></tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-800/60 text-xs sm:text-sm">
+                        <tr><td class="py-3 px-4 font-bold text-cyan-400">1. Gün</td><td class="py-3 px-4">İstanbul – Selanik</td><td class="py-3 px-4">Selanik</td><td class="py-3 px-4 text-slate-400">İpsala geçişi, akşam kordon boyu.</td></tr>
+                        <tr><td class="py-3 px-4 font-bold text-cyan-400">2. Gün</td><td class="py-3 px-4">Selanik – Igoumenitsa</td><td class="py-3 px-4">Gece Feribotu</td><td class="py-3 px-4 text-slate-400">Akşam Bari feribotuna biniş.</td></tr>
+                        <tr><td class="py-3 px-4 font-bold text-cyan-400">3. Gün</td><td class="py-3 px-4">Bari – Napoli</td><td class="py-3 px-4">Napoli</td><td class="py-3 px-4 text-slate-400">Sabah limandan iniş, doğrudan batıya sürüş.</td></tr>
+                        <tr><td class="py-3 px-4 font-bold text-cyan-400">4. Gün</td><td class="py-3 px-4">Napoli</td><td class="py-3 px-4">Napoli</td><td class="py-3 px-4 text-slate-400">Şehir merkezi, Spaccanapoli ve yer altı şehri.</td></tr>
+                        <tr><td class="py-3 px-4 font-bold text-cyan-400">5. Gün</td><td class="py-3 px-4">Napoli (Pompeii)</td><td class="py-3 px-4">Napoli</td><td class="py-3 px-4 text-slate-400">Günübirlik Pompeii ve Vezüv Yanardağı turu.</td></tr>
+                        <tr><td class="py-3 px-4 font-bold text-cyan-400">6. Gün</td><td class="py-3 px-4">Napoli (Amalfi Kıyısı)</td><td class="py-3 px-4">Napoli</td><td class="py-3 px-4 text-slate-400">Arabayla Positano ve Amalfi kasabalarına gidiş-dönüş.</td></tr>
+                        <tr><td class="py-3 px-4 font-bold text-cyan-400">7. Gün</td><td class="py-3 px-4">Napoli – Matera</td><td class="py-3 px-4">Matera</td><td class="py-3 px-4 text-slate-400">Sabah Napoli'den çıkış, 3 saatlik sürüşle mağaralara varış.</td></tr>
+                        <tr><td class="py-3 px-4 font-bold text-cyan-400">8. Gün</td><td class="py-3 px-4">Matera</td><td class="py-3 px-4">Matera</td><td class="py-3 px-4 text-slate-400">Sassi bölgesini ve kiliseleri derinlemesine keşif.</td></tr>
+                        <tr><td class="py-3 px-4 font-bold text-cyan-400">9. Gün</td><td class="py-3 px-4">Matera – Lecce</td><td class="py-3 px-4">Lecce</td><td class="py-3 px-4 text-slate-400">Öğleden sonra "Topuk" bölgesine geçiş.</td></tr>
+                        <tr><td class="py-3 px-4 font-bold text-cyan-400">10. Gün</td><td class="py-3 px-4">Lecce</td><td class="py-3 px-4">Lecce</td><td class="py-3 px-4 text-slate-400">Barok sokaklar, bazilikalar ve yerel lezzetler.</td></tr>
+                        <tr><td class="py-3 px-4 font-bold text-cyan-400">11. Gün</td><td class="py-3 px-4">Lecce</td><td class="py-3 px-4">Lecce</td><td class="py-3 px-4 text-slate-400">Çevre kasabalara (Otranto veya Gallipoli) kısa kaçamak.</td></tr>
+                        <tr><td class="py-3 px-4 font-bold text-cyan-400">12. Gün</td><td class="py-3 px-4">Lecce – Bari</td><td class="py-3 px-4">Gece Feribotu</td><td class="py-3 px-4 text-slate-400">Akşamüstü Bari'ye varış ve feribota biniş.</td></tr>
+                        <tr><td class="py-3 px-4 font-bold text-cyan-400">13. Gün</td><td class="py-3 px-4">Igoumenitsa – Kavala</td><td class="py-3 px-4">Kavala</td><td class="py-3 px-4 text-slate-400">Feribottan iniş ve deniz kıyısında dinlenme.</td></tr>
+                        <tr><td class="py-3 px-4 font-bold text-cyan-400">14. Gün</td><td class="py-3 px-4">Kavala – İstanbul</td><td class="py-3 px-4">İstanbul</td><td class="py-3 px-4 text-slate-400">Sınır geçişi ve eve dönüş.</td></tr>
+                        <tr><td class="py-3 px-4 font-bold text-cyan-400">15. Gün</td><td class="py-3 px-4">Yedek Gün</td><td class="py-3 px-4">-</td><td class="py-3 px-4 text-slate-400">Dinlenme veya olası feribot rötarları için esneklik.</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+
+    <!-- TAB 3: YUNANİSTAN KARAYOLU ROTASI -->
+    <main id="content-greece" class="tab-content hidden flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+            <div class="bg-slate-900/80 border border-slate-800 rounded-2xl p-5 relative overflow-hidden backdrop-blur-sm shadow-xl">
+                <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Yunanistan Bütçesi (€)</p>
+                <h3 id="g-stat-total-eur" class="text-2xl sm:text-3xl font-extrabold text-cyan-400 mt-2">€0</h3>
+                <p id="g-stat-total-try" class="text-xs text-slate-400 mt-1 font-medium">₺0 TL</p>
+            </div>
+            <div class="bg-slate-900/80 border border-slate-800 rounded-2xl p-5 relative overflow-hidden backdrop-blur-sm shadow-xl">
+                <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Sürüş Mesafesi</p>
+                <h3 class="text-2xl sm:text-3xl font-extrabold text-slate-100 mt-2">2,450 km</h3>
+                <p class="text-xs text-slate-400 mt-1 font-medium">Ring Turu</p>
+            </div>
+            <div class="bg-slate-900/80 border border-slate-800 rounded-2xl p-5 relative overflow-hidden backdrop-blur-sm shadow-xl">
+                <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Konaklama</p>
+                <h3 id="g-stat-nights" class="text-2xl sm:text-3xl font-extrabold text-amber-400 mt-2">10 Gece</h3>
+                <p class="text-xs text-slate-400 mt-1 font-medium">Toplam 11 Gün</p>
+            </div>
+            <div class="bg-slate-900/80 border border-slate-800 rounded-2xl p-5 relative overflow-hidden backdrop-blur-sm shadow-xl">
+                <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Benzin & Otoban</p>
+                <h3 id="g-stat-fuel-cost" class="text-2xl sm:text-3xl font-extrabold text-emerald-400 mt-2">€0</h3>
+                <p class="text-xs text-slate-400 mt-1 font-medium">Toplam Masraf</p>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+            <div class="lg:col-span-7 bg-slate-900/70 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-6">
+                <h2 class="text-lg font-bold text-slate-100 border-b border-slate-800 pb-4">Yunanistan Parametreleri</h2>
+                <div class="space-y-5 text-sm">
+                    <div>
+                        <div class="flex justify-between items-center mb-2"><label class="text-slate-300 font-medium">Benzin (€/L)</label><span id="g-val-fuel-price" class="text-cyan-400 font-bold">€1.85 / L</span></div>
+                        <input type="range" id="g-input-fuel-price" min="1.40" max="2.50" step="0.05" value="1.85" class="w-full h-2 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-cyan-400">
+                    </div>
+                    <div>
+                        <div class="flex justify-between items-center mb-2"><label class="text-slate-300 font-medium">Tüketim (L / 100 km)</label><span id="g-val-consumption" class="text-cyan-400 font-bold">8.5 L</span></div>
+                        <input type="range" id="g-input-consumption" min="5.0" max="14.0" step="0.5" value="8.5" class="w-full h-2 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-cyan-400">
+                    </div>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div><label class="block text-slate-300 font-medium mb-1">Otel (€)</label><input type="number" id="g-input-hotel" value="95" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-100"></div>
+                        <div><label class="block text-slate-300 font-medium mb-1">Yemek (€)</label><input type="number" id="g-input-food" value="75" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-100"></div>
+                    </div>
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                        <div><label class="block text-slate-300 font-medium mb-1">Konaklama Gece</label><input type="number" id="g-input-nights" value="10" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-100"></div>
+                        <div><label class="block text-slate-300 font-medium mb-1">Otoban (€)</label><input type="number" id="g-input-tolls" value="140" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-100"></div>
+                        <div><label class="block text-slate-300 font-medium mb-1">EUR/TRY (₺)</label><input type="number" id="g-input-eur-try" value="40.0" step="0.5" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-100"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="lg:col-span-5 bg-slate-900/70 border border-slate-800 rounded-2xl p-6 shadow-xl flex flex-col justify-between">
+                <div>
+                    <h2 class="text-lg font-bold text-slate-100 border-b border-slate-800 pb-4 mb-4">Yunanistan Bütçe Dağılımı</h2>
+                    <div class="relative w-full aspect-square max-w-[320px] mx-auto"><canvas id="greeceChart"></canvas></div>
+                </div>
+                <div class="mt-6 pt-4 border-t border-slate-800 space-y-2 text-xs text-slate-400">
+                    <div class="flex justify-between items-center"><span>Benzin</span><span id="g-legend-fuel" class="font-bold text-slate-200">€0</span></div>
+                    <div class="flex justify-between items-center"><span>Otoban</span><span id="g-legend-tolls" class="font-bold text-slate-200">€0</span></div>
+                    <div class="flex justify-between items-center"><span>Otel</span><span id="g-legend-hotel" class="font-bold text-slate-200">€0</span></div>
+                    <div class="flex justify-between items-center"><span>Yemek</span><span id="g-legend-food" class="font-bold text-slate-200">€0</span></div>
+                    <div class="flex justify-between items-center"><span>Müze & Diğer</span><span id="g-legend-other" class="font-bold text-slate-200">€0</span></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-slate-900/70 border border-slate-800 rounded-2xl p-6 shadow-xl">
+            <h2 class="text-lg font-bold text-slate-100 mb-2">Yunanistan Detaylı Masraf Kalemleri</h2>
+            <div class="overflow-x-auto">
+                <table class="w-full text-left text-sm text-slate-300">
+                    <thead class="bg-slate-950 text-slate-400 uppercase text-xs">
+                        <tr><th class="py-3 px-4">Kategori</th><th class="py-3 px-4">Hesaplama Temeli</th><th class="py-3 px-4 text-right">Maliyet (€)</th><th class="py-3 px-4 text-right">Maliyet (₺ TL)</th></tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-800/60 text-xs sm:text-sm">
+                        <tr><td class="py-3 px-4 font-semibold">Benzin Tüketimi</td><td id="g-tbl-fuel-basis" class="py-3 px-4 text-slate-400">-</td><td id="g-tbl-fuel-eur" class="py-3 px-4 text-right">€0</td><td id="g-tbl-fuel-try" class="py-3 px-4 text-right text-slate-400">₺0</td></tr>
+                        <tr><td class="py-3 px-4 font-semibold">Otoban & Köprü</td><td class="py-3 px-4 text-slate-400">Egnatia Odos</td><td id="g-tbl-tolls-eur" class="py-3 px-4 text-right">€0</td><td id="g-tbl-tolls-try" class="py-3 px-4 text-right text-slate-400">₺0</td></tr>
+                        <tr><td class="py-3 px-4 font-semibold">Otel Konaklaması</td><td id="g-tbl-hotel-basis" class="py-3 px-4 text-slate-400">-</td><td id="g-tbl-hotel-eur" class="py-3 px-4 text-right">€0</td><td id="g-tbl-hotel-try" class="py-3 px-4 text-right text-slate-400">₺0</td></tr>
+                        <tr><td class="py-3 px-4 font-semibold">Yeme & İçme</td><td id="g-tbl-food-basis" class="py-3 px-4 text-slate-400">-</td><td id="g-tbl-food-eur" class="py-3 px-4 text-right">€0</td><td id="g-tbl-food-try" class="py-3 px-4 text-right text-slate-400">₺0</td></tr>
+                        <tr><td class="py-3 px-4 font-semibold">Müze & Sigorta</td><td class="py-3 px-4 text-slate-400">Yeşil Kart dahil</td><td id="g-tbl-other-eur" class="py-3 px-4 text-right">€0</td><td id="g-tbl-other-try" class="py-3 px-4 text-right text-slate-400">₺0</td></tr>
+                    </tbody>
+                    <tfoot class="border-t-2 border-slate-700 font-bold">
+                        <tr><td class="py-3 px-4 text-cyan-400" colspan="2">YUNANİSTAN TOPLAM</td><td id="g-tbl-grand-eur" class="py-3 px-4 text-right text-cyan-400">€0</td><td id="g-tbl-grand-try" class="py-3 px-4 text-right text-cyan-400">₺0</td></tr>
+                    </tfoot>
+                </table>
+            </div>
+        </div>
+
+        <!-- YUNANİSTAN GÜN GÜN ŞEHİR PROGRAMI -->
+        <div class="bg-slate-900/70 border border-slate-800 rounded-2xl p-6 shadow-xl">
+            <h2 class="text-lg font-bold text-slate-100 mb-4"><i class="fa-solid fa-route text-cyan-400 mr-2"></i> 11 Günlük Yunanistan Ring Turu Programı</h2>
+            <div class="overflow-x-auto">
+                <table class="w-full text-left text-sm text-slate-300">
+                    <thead class="bg-slate-950 text-slate-400 uppercase text-xs">
+                        <tr><th class="py-3 px-4 rounded-l-xl">Gün</th><th class="py-3 px-4">Rota</th><th class="py-3 px-4">Konaklama</th><th class="py-3 px-4 rounded-r-xl">Önemli Notlar</th></tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-800/60 text-xs sm:text-sm">
+                        <tr><td class="py-3 px-4 font-bold text-cyan-400">1. Gün</td><td class="py-3 px-4">İstanbul – Dedeağaç – Kavala</td><td class="py-3 px-4">Kavala</td><td class="py-3 px-4 text-slate-400">İpsala sınır kapısı, sahil yürüyüşü ve deniz mahsulleri.</td></tr>
+                        <tr><td class="py-3 px-4 font-bold text-cyan-400">2. Gün</td><td class="py-3 px-4">Kavala – Selanik</td><td class="py-3 px-4">Selanik</td><td class="py-3 px-4 text-slate-400">Atatürk Evi ziyareti, Ladadika bölgesinde akşam yemeği.</td></tr>
+                        <tr><td class="py-3 px-4 font-bold text-cyan-400">3. Gün</td><td class="py-3 px-4">Selanik – Meteora (Kalabaka)</td><td class="py-3 px-4">Kalabaka</td><td class="py-3 px-4 text-slate-400">Dev kayalar üzerindeki tarihi manastırlar.</td></tr>
+                        <tr><td class="py-3 px-4 font-bold text-cyan-400">4. Gün</td><td class="py-3 px-4">Meteora – Delphi – Atina</td><td class="py-3 px-4">Atina</td><td class="py-3 px-4 text-slate-400">Antik Delphi kalıntıları üzerinden başkente geçiş.</td></tr>
+                        <tr><td class="py-3 px-4 font-bold text-cyan-400">5. Gün</td><td class="py-3 px-4">Atina</td><td class="py-3 px-4">Atina</td><td class="py-3 px-4 text-slate-400">Akropolis, Plaka sokakları ve tarihi Agora.</td></tr>
+                        <tr><td class="py-3 px-4 font-bold text-cyan-400">6. Gün</td><td class="py-3 px-4">Atina – Nafplio – Epidaurus</td><td class="py-3 px-4">Nafplio</td><td class="py-3 px-4 text-slate-400">Peloponez yarımadası, antik tiyatro ve romantik sahil kasabası.</td></tr>
+                        <tr><td class="py-3 px-4 font-bold text-cyan-400">7. Gün</td><td class="py-3 px-4">Nafplio – Olympia</td><td class="py-3 px-4">Olympia</td><td class="py-3 px-4 text-slate-400">Olimpiyat oyunlarının doğduğu antik şehir.</td></tr>
+                        <tr><td class="py-3 px-4 font-bold text-cyan-400">8. Gün</td><td class="py-3 px-4">Olympia – Patras – Delphi</td><td class="py-3 px-4">Delphi</td><td class="py-3 px-4 text-slate-400">Rio-Antirrio köprüsünden geçiş ve dağ manzaraları.</td></tr>
+                        <tr><td class="py-3 px-4 font-bold text-cyan-400">9. Gün</td><td class="py-3 px-4">Delphi – Halkidiki</td><td class="py-3 px-4">Halkidiki</td><td class="py-3 px-4 text-slate-400">Ege'nin turkuaz sularında dinlenme ve sahil keyfi.</td></tr>
+                        <tr><td class="py-3 px-4 font-bold text-cyan-400">10. Gün</td><td class="py-3 px-4">Halkidiki – İskeçe (Xanthi)</td><td class="py-3 px-4">İskeçe</td><td class="py-3 px-4 text-slate-400">Batı Trakya Türk azınlık bölgesi, tarihi çarşılar.</td></tr>
+                        <tr><td class="py-3 px-4 font-bold text-cyan-400">11. Gün</td><td class="py-3 px-4">İskeçe – İstanbul</td><td class="py-3 px-4">-</td><td class="py-3 px-4 text-slate-400">Gümülcine üzerinden İpsala sınır kapısı ve dönüş.</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+
+    <!-- TAB 4: İSPANYA SAHIL TURU -->
+    <main id="content-spain" class="tab-content hidden flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+        <div class="bg-slate-900/80 border border-slate-800 rounded-2xl p-4 flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div class="flex items-center space-x-3">
+                <i class="fa-solid fa-umbrella-beach text-cyan-400 text-xl"></i>
+                <div>
+                    <h3 class="text-sm font-bold text-slate-100">İspanya Akdeniz & Endülüs Sahil Turu</h3>
+                    <p class="text-xs text-slate-400">Costa Brava ➔ Valensiya ➔ Costa del Sol ➔ Endülüs (17 Gün / ~3.800 km)</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+            <div class="bg-slate-900/80 border border-slate-800 rounded-2xl p-5 relative overflow-hidden backdrop-blur-sm shadow-xl">
+                <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">İspanya Toplam Bütçe (€)</p>
+                <h3 id="s-stat-total-eur" class="text-2xl sm:text-3xl font-extrabold text-cyan-400 mt-2">€0</h3>
+                <p id="s-stat-total-try" class="text-xs text-slate-400 mt-1 font-medium">₺0 TL</p>
+            </div>
+            <div class="bg-slate-900/80 border border-slate-800 rounded-2xl p-5 relative overflow-hidden backdrop-blur-sm shadow-xl">
+                <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Sürüş Mesafesi</p>
+                <h3 class="text-2xl sm:text-3xl font-extrabold text-slate-100 mt-2">3,800 km</h3>
+                <p class="text-xs text-slate-400 mt-1 font-medium">Sahil Şeridi & Otoyol</p>
+            </div>
+            <div class="bg-slate-900/80 border border-slate-800 rounded-2xl p-5 relative overflow-hidden backdrop-blur-sm shadow-xl">
+                <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Konaklama Süresi</p>
+                <h3 id="s-stat-nights" class="text-2xl sm:text-3xl font-extrabold text-amber-400 mt-2">16 Gece</h3>
+                <p id="s-stat-days-desc" class="text-xs text-slate-400 mt-1 font-medium">Toplam 17 Gün</p>
+            </div>
+            <div class="bg-slate-900/80 border border-slate-800 rounded-2xl p-5 relative overflow-hidden backdrop-blur-sm shadow-xl">
+                <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Benzin & Otoban</p>
+                <h3 id="s-stat-fuel-cost" class="text-2xl sm:text-3xl font-extrabold text-emerald-400 mt-2">€0</h3>
+                <p class="text-xs text-slate-400 mt-1 font-medium">Toplam Yakıt + Peajes</p>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+            <div class="lg:col-span-7 bg-slate-900/70 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-6">
+                <h2 class="text-lg font-bold text-slate-100 border-b border-slate-800 pb-4">İspanya Seyahat Parametreleri</h2>
+                <div class="space-y-5 text-sm">
+                    <div>
+                        <div class="flex justify-between items-center mb-2"><label class="text-slate-300 font-medium">Benzin Litre Fiyatı (€/L)</label><span id="s-val-fuel-price" class="text-cyan-400 font-bold">€1.65 / L</span></div>
+                        <input type="range" id="s-input-fuel-price" min="1.30" max="2.20" step="0.05" value="1.65" class="w-full h-2 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-cyan-400">
+                    </div>
+                    <div>
+                        <div class="flex justify-between items-center mb-2"><label class="text-slate-300 font-medium">Araç Yakıt Tüketimi (L / 100 km)</label><span id="s-val-consumption" class="text-cyan-400 font-bold">8.0 L</span></div>
+                        <input type="range" id="s-input-consumption" min="5.0" max="14.0" step="0.5" value="8.0" class="w-full h-2 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-cyan-400">
+                    </div>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div><label class="block text-slate-300 font-medium mb-1">Gecelik Otel Bütçesi (€)</label><input type="number" id="s-input-hotel" value="110" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-100"></div>
+                        <div><label class="block text-slate-300 font-medium mb-1">Günlük Yemek (€ / Gün)</label><input type="number" id="s-input-food" value="85" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-100"></div>
+                    </div>
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                        <div><label class="block text-slate-300 font-medium mb-1">Konaklama Gece</label><input type="number" id="s-input-nights" value="16" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-100"></div>
+                        <div><label class="block text-slate-300 font-medium mb-1">Otoban (Peajes) (€)</label><input type="number" id="s-input-tolls" value="180" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-100"></div>
+                        <div><label class="block text-slate-300 font-medium mb-1">EUR/TRY (₺)</label><input type="number" id="s-input-eur-try" value="40.0" step="0.5" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-100"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="lg:col-span-5 bg-slate-900/70 border border-slate-800 rounded-2xl p-6 shadow-xl flex flex-col justify-between">
+                <div>
+                    <h2 class="text-lg font-bold text-slate-100 border-b border-slate-800 pb-4 mb-4">İspanya Bütçe Dağılımı</h2>
+                    <div class="relative w-full aspect-square max-w-[320px] mx-auto"><canvas id="spainChart"></canvas></div>
+                </div>
+                <div class="mt-6 pt-4 border-t border-slate-800 space-y-2 text-xs text-slate-400">
+                    <div class="flex justify-between items-center"><span>Benzin</span><span id="s-legend-fuel" class="font-bold text-slate-200">€0</span></div>
+                    <div class="flex justify-between items-center"><span>Otoban</span><span id="s-legend-tolls" class="font-bold text-slate-200">€0</span></div>
+                    <div class="flex justify-between items-center"><span>Otel</span><span id="s-legend-hotel" class="font-bold text-slate-200">€0</span></div>
+                    <div class="flex justify-between items-center"><span>Yemek</span><span id="s-legend-food" class="font-bold text-slate-200">€0</span></div>
+                    <div class="flex justify-between items-center"><span>Müze & Diğer</span><span id="s-legend-other" class="font-bold text-slate-200">€0</span></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-slate-900/70 border border-slate-800 rounded-2xl p-6 shadow-xl">
+            <h2 class="text-lg font-bold text-slate-100 mb-2"><i class="fa-solid fa-list-check text-cyan-400 mr-2"></i> İspanya Detaylı Masraf Kalemleri</h2>
+            <div class="overflow-x-auto">
+                <table class="w-full text-left text-sm text-slate-300">
+                    <thead class="bg-slate-950 text-slate-400 uppercase text-xs">
+                        <tr><th class="py-3 px-4 rounded-l-xl">Kategori</th><th class="py-3 px-4">Hesaplama Temeli</th><th class="py-3 px-4 text-right">Maliyet (€)</th><th class="py-3 px-4 text-right rounded-r-xl">Maliyet (₺ TL)</th></tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-800/60">
+                        <tr><td class="py-3.5 px-4 font-semibold text-slate-100">Benzin Tüketimi</td><td id="s-tbl-fuel-basis" class="py-3.5 px-4 text-xs text-slate-400">3.800 km @ 8.0 L/100km</td><td id="s-tbl-fuel-eur" class="py-3.5 px-4 text-right font-medium">€0</td><td id="s-tbl-fuel-try" class="py-3.5 px-4 text-right text-slate-400">₺0</td></tr>
+                        <tr><td class="py-3.5 px-4 font-semibold text-slate-100">Otoban (Peajes) Ücretleri</td><td class="py-3 px-4 text-xs text-slate-400">AP-7 ve otoyol geçişleri</td><td id="s-tbl-tolls-eur" class="py-3.5 px-4 text-right font-medium">€0</td><td id="s-tbl-tolls-try" class="py-3.5 px-4 text-right text-slate-400">₺0</td></tr>
+                        <tr><td class="py-3.5 px-4 font-semibold text-slate-100">Otel Konaklaması</td><td id="s-tbl-hotel-basis" class="py-3.5 px-4 text-xs text-slate-400">16 gece @ €110/gece</td><td id="s-tbl-hotel-eur" class="py-3.5 px-4 text-right font-medium">€0</td><td id="s-tbl-hotel-try" class="py-3.5 px-4 text-right text-slate-400">₺0</td></tr>
+                        <tr><td class="py-3.5 px-4 font-semibold text-slate-100">Yeme & İçme</td><td id="s-tbl-food-basis" class="py-3.5 px-4 text-xs text-slate-400">17 gün @ €85/gün</td><td id="s-tbl-food-eur" class="py-3.5 px-4 text-right font-medium">€0</td><td id="s-tbl-food-try" class="py-3.5 px-4 text-right text-slate-400">₺0</td></tr>
+                        <tr><td class="py-3.5 px-4 font-semibold text-slate-100">Müze & Ören Yeri</td><td class="py-3 px-4 text-xs text-slate-400">Sagrada, Alhambra biletleri</td><td id="s-tbl-other-eur" class="py-3.5 px-4 text-right font-medium">€350</td><td id="s-tbl-other-try" class="py-3.5 px-4 text-right text-slate-400">₺0</td></tr>
+                    </tbody>
+                    <tfoot class="border-t-2 border-slate-700 font-bold text-slate-100">
+                        <tr><td class="py-4 px-4 text-cyan-400" colspan="2">İSPANYA TOPLAM TAHMİNİ BÜTÇE</td><td id="s-tbl-grand-eur" class="py-4 px-4 text-right text-cyan-400 text-base">€0</td><td id="s-tbl-grand-try" class="py-4 px-4 text-right text-cyan-400 text-base">₺0</td></tr>
+                    </tfoot>
+                </table>
+            </div>
+        </div>
+
+        <div class="bg-slate-900/70 border border-slate-800 rounded-2xl p-6 shadow-xl">
+            <h2 class="text-lg font-bold text-slate-100 mb-4"><i class="fa-solid fa-route text-cyan-400 mr-2"></i> 17 Günlük İspanya Sahil Turu Rota Programı</h2>
+            <div class="overflow-x-auto">
+                <table class="w-full text-left text-sm text-slate-300">
+                    <thead class="bg-slate-950 text-slate-400 uppercase text-xs">
+                        <tr><th class="py-3 px-4 rounded-l-xl">Gün</th><th class="py-3 px-4">Rota</th><th class="py-3 px-4">Konaklama</th><th class="py-3 px-4 rounded-r-xl">Önemli Notlar</th></tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-800/60 text-xs sm:text-sm">
+                        <tr><td class="py-3 px-4 font-bold text-cyan-400">1. Gün</td><td class="py-3 px-4">Barcelona Varış</td><td class="py-3 px-4">Barcelona</td><td class="py-3 px-4 text-slate-400">Araba kiralama, Las Ramblas ve Gotik Mahalle.</td></tr>
+                        <tr><td class="py-3 px-4 font-bold text-cyan-400">2. Gün</td><td class="py-3 px-4">Barcelona</td><td class="py-3 px-4">Barcelona</td><td class="py-3 px-4 text-slate-400">Sagrada Familia, Park Güell ve sahilde paella akşamı.</td></tr>
+                        <tr><td class="py-3 px-4 font-bold text-cyan-400">3. Gün</td><td class="py-3 px-4">Barcelona ➔ Costa Brava (Tossa de Mar)</td><td class="py-3 px-4">Tossa de Mar</td><td class="py-3 px-4 text-slate-400">Kuzeye sahil boyunca sürüş, tarihi kaleler ve koylar.</td></tr>
+                        <tr><td class="py-3 px-4 font-bold text-cyan-400">4. Gün</td><td class="py-3 px-4">Tossa de Mar ➔ Valencia (350 km)</td><td class="py-3 px-4">Valencia</td><td class="py-3 px-4 text-slate-400">Güneye uzun sahil sürüşü, Sanat ve Bilim Şehri.</td></tr>
+                        <tr><td class="py-3 px-4 font-bold text-cyan-400">5. Gün</td><td class="py-3 px-4">Valencia</td><td class="py-3 px-4">Valencia</td><td class="py-3 px-4 text-slate-400">Eski şehir, Mercado Central ve orijinal Valensiya Paellası.</td></tr>
+                        <tr><td class="py-3 px-4 font-bold text-cyan-400">6. Gün</td><td class="py-3 px-4">Valencia ➔ Alicante (170 km)</td><td class="py-3 px-4">Alicante</td><td class="py-3 px-4 text-slate-400">Costa Blanca kıyıları, Santa Barbara Kalesi.</td></tr>
+                        <tr><td class="py-3 px-4 font-bold text-cyan-400">7. Gün</td><td class="py-3 px-4">Alicante ➔ Cartagena ➔ Almería (220 km)</td><td class="py-3 px-4">Almería</td><td class="py-3 px-4 text-slate-400">Romalılardan kalma tiyatrolar ve çöl manzaralı sahil yolları.</td></tr>
+                        <tr><td class="py-3 px-4 font-bold text-cyan-400">8. Gün</td><td class="py-3 px-4">Almería ➔ Granada (160 km)</td><td class="py-3 px-4">Granada</td><td class="py-3 px-4 text-slate-400">İç kesime geçiş, akşam Albaicín mahallesinden Alhambra manzarası.</td></tr>
+                        <tr><td class="py-3 px-4 font-bold text-cyan-400">9. Gün</td><td class="py-3 px-4">Granada</td><td class="py-3 px-4">Granada</td><td class="py-3 px-4 text-slate-400">El Hamra Sarayı (Alhambra) tam gün ziyaret (rezervasyon şart).</td></tr>
+                        <tr><td class="py-3 px-4 font-bold text-cyan-400">10. Gün</td><td class="py-3 px-4">Granada ➔ Málaga (130 km)</td><td class="py-3 px-4">Málaga</td><td class="py-3 px-4 text-slate-400">Costa del Sol'a iniş, Picasso Müzesi ve liman bölgesi.</td></tr>
+                        <tr><td class="py-3 px-4 font-bold text-cyan-400">11. Gün</td><td class="py-3 px-4">Málaga (Marbella & Ronda Kaçamağı)</td><td class="py-3 px-4">Málaga</td><td class="py-3 px-4 text-slate-400">Lüks liman Marbella ve uçurum kenarındaki Ronda kasabası.</td></tr>
+                        <tr><td class="py-3 px-4 font-bold text-cyan-400">12. Gün</td><td class="py-3 px-4">Málaga ➔ Cádiz (240 km)</td><td class="py-3 px-4">Cádiz</td><td class="py-3 px-4 text-slate-400">Atlas Okyanusu kıyısına varış, Avrupa'nın en eski şehirlerinden biri.</td></tr>
+                        <tr><td class="py-3 px-4 font-bold text-cyan-400">13. Gün</td><td class="py-3 px-4">Cádiz ➔ Sevilla (120 km)</td><td class="py-3 px-4">Sevilla</td><td class="py-3 px-4 text-slate-400">Endülüs'ün kalbine geçiş, Flamenko gecesi ve dev katedral.</td></tr>
+                        <tr><td class="py-3 px-4 font-bold text-cyan-400">14. Gün</td><td class="py-3 px-4">Sevilla</td><td class="py-3 px-4">Sevilla</td><td class="py-3 px-4 text-slate-400">Real Alcázar sarayı, Plaza de España ve Maria Luisa parkı.</td></tr>
+                        <tr><td class="py-3 px-4 font-bold text-cyan-400">15. Gün</td><td class="py-3 px-4">Sevilla ➔ Córdoba ➔ Madrid (530 km)</td><td class="py-3 px-4">Madrid</td><td class="py-3 px-4 text-slate-400">Yol üstü Córdoba Mezquita ziyareti ve başkente varış.</td></tr>
+                        <tr><td class="py-3 px-4 font-bold text-cyan-400">16. Gün</td><td class="py-3 px-4">Madrid</td><td class="py-3 px-4">Madrid</td><td class="py-3 px-4 text-slate-400">Prado Müzesi, Kraliyet Sarayı ve Gran Vía alışverişi.</td></tr>
+                        <tr><td class="py-3 px-4 font-bold text-cyan-400">17. Gün</td><td class="py-3 px-4">Madrid (Araç Teslim & Dönüş)</td><td class="py-3 px-4">-</td><td class="py-3 px-4 text-slate-400">Havalimanı araç teslimi ve uçuşla dönüş.</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-navy-950 border-t border-slate-900 py-6 text-center text-xs text-slate-500">
+        <p>Ekspedisyon ve Seyahat Bütçe Planlama Sistemi &bull; Tam Entegre Sürüm</p>
+    </footer>
+
+    <!-- JavaScript Hesaplama Mantığı -->
+    <script>
+        function switchTab(tab) {
+            ['rotterdam', 'italy', 'greece', 'spain'].forEach(t => {
+                document.getElementById(`content-${t}`).classList.add('hidden');
+                document.getElementById(`tab-btn-${t}`).className = "px-3 py-2 rounded-xl text-xs font-semibold transition-all duration-200 bg-slate-900 text-slate-400 border border-slate-800 hover:text-slate-100 flex items-center space-x-1.5 whitespace-nowrap";
+            });
+            document.getElementById(`content-${tab}`).classList.remove('hidden');
+            document.getElementById(`tab-btn-${tab}`).className = "px-3 py-2 rounded-xl text-xs font-semibold transition-all duration-200 bg-cyan-500 text-slate-950 shadow-lg shadow-cyan-500/20 flex items-center space-x-1.5 whitespace-nowrap";
+        }
+
+        // --- ROTTERDAM MANTIĞI ---
+        const DISTANCE_KM = 3400;
+        const inputFuelPrice = document.getElementById('input-fuel-price');
+        const inputUpstreamCons = document.getElementById('input-upstream-cons');
+        const inputDownstreamCons = document.getElementById('input-downstream-cons');
+        const inputOutboundDays = document.getElementById('input-outbound-days');
+        const inputReturnDays = document.getElementById('input-return-days');
+        const inputMarinaFee = document.getElementById('input-marina-fee');
+        const inputLivingCost = document.getElementById('input-living-cost');
+        const inputPermits = document.getElementById('input-permits');
+        const inputMaintenance = document.getElementById('input-maintenance');
+        const inputEurTry = document.getElementById('input-eur-try');
+        let costChart;
+
+        function initChart() {
+            const ctx = document.getElementById('costChart').getContext('2d');
+            costChart = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Yakıt', 'Marina', 'Yaşam', 'Bakım', 'Kanal'],
+                    datasets: [{ data: [0,0,0,0,0], backgroundColor: ['#00D8F6', '#3B82F6', '#10B981', '#F59E0B', '#A855F7'], borderWidth: 0 }]
+                },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, cutout: '72%' }
+            });
+        }
+
+        function updateCalculations() {
+            const fp = parseFloat(inputFuelPrice.value), uc = parseFloat(inputUpstreamCons.value), dc = parseFloat(inputDownstreamCons.value);
+            const od = parseInt(inputOutboundDays.value)||0, rd = parseInt(inputReturnDays.value)||0;
+            const mf = parseFloat(inputMarinaFee.value)||0, lc = parseFloat(inputLivingCost.value)||0;
+            const permits = parseFloat(inputPermits.value)||0, maint = parseFloat(inputMaintenance.value)||0, et = parseFloat(inputEurTry.value)||40;
+
+            document.getElementById('val-fuel-price').innerText = `€${fp.toFixed(2)} / L`;
+            document.getElementById('val-upstream-cons').innerText = `${uc.toFixed(1)} L/km`;
+            document.getElementById('val-downstream-cons').innerText = `${dc.toFixed(1)} L/km`;
+
+            const ofuel = DISTANCE_KM * uc * fp, rfuel = DISTANCE_KM * dc * fp, tfuel = ofuel + rfuel;
+            const tdays = od + rd, tmoor = tdays * mf, tliv = tdays * lc;
+            const grand = tfuel + tmoor + tliv + permits + maint;
+
+            document.getElementById('stat-total-eur').innerText = `€${Math.round(grand).toLocaleString()}`;
+            document.getElementById('stat-total-try').innerText = `₺${Math.round(grand * et).toLocaleString()} TL`;
+            document.getElementById('stat-daily-cost').innerText = `€${Math.round(tdays > 0 ? grand/tdays : 0)}`;
+            document.getElementById('stat-cost-per-km').innerText = `€${(grand/(DISTANCE_KM*2)).toFixed(2)}`;
+            document.getElementById('stat-total-fuel').innerText = `${Math.round((DISTANCE_KM*uc)+(DISTANCE_KM*dc)).toLocaleString()} L`;
+            document.getElementById('stat-fuel-cost').innerText = `Yakıt Bütçesi: €${Math.round(tfuel).toLocaleString()}`;
+
+            document.getElementById('tbl-fuel-outbound-basis').innerText = `${DISTANCE_KM} km @ ${uc} L/km`;
+            document.getElementById('tbl-fuel-outbound-eur').innerText = `€${Math.round(ofuel).toLocaleString()}`;
+            document.getElementById('tbl-fuel-outbound-try').innerText = `₺${Math.round(ofuel * et).toLocaleString()}`;
+            document.getElementById('tbl-fuel-return-basis').innerText = `${DISTANCE_KM} km @ ${dc} L/km`;
+            document.getElementById('tbl-fuel-return-eur').innerText = `€${Math.round(rfuel).toLocaleString()}`;
+            document.getElementById('tbl-fuel-return-try').innerText = `₺${Math.round(rfuel * et).toLocaleString()}`;
+            document.getElementById('tbl-mooring-basis').innerText = `${tdays} gece @ €${mf}/gece`;
+            document.getElementById('tbl-mooring-eur').innerText = `€${Math.round(tmoor).toLocaleString()}`;
+            document.getElementById('tbl-mooring-try').innerText = `₺${Math.round(tmoor * et).toLocaleString()}`;
+            document.getElementById('tbl-living-basis').innerText = `${tdays} gün @ €${lc}/gün`;
+            document.getElementById('tbl-living-eur').innerText = `€${Math.round(tliv).toLocaleString()}`;
+            document.getElementById('tbl-living-try').innerText = `₺${Math.round(tliv * et).toLocaleString()}`;
+            document.getElementById('tbl-permits-eur').innerText = `€${Math.round(permits).toLocaleString()}`;
+            document.getElementById('tbl-permits-try').innerText = `₺${Math.round(permits * et).toLocaleString()}`;
+            document.getElementById('tbl-maint-eur').innerText = `€${Math.round(maint).toLocaleString()}`;
+            document.getElementById('tbl-maint-try').innerText = `₺${Math.round(maint * et).toLocaleString()}`;
+            document.getElementById('tbl-grand-eur').innerText = `€${Math.round(grand).toLocaleString()}`;
+            document.getElementById('tbl-grand-try').innerText = `₺${Math.round(grand * et).toLocaleString()}`;
+
+            if(costChart) { costChart.data.datasets[0].data = [tfuel, tmoor, tliv, maint, permits]; costChart.update(); }
+            document.getElementById('chart-legend-fuel').innerText = `€${Math.round(tfuel).toLocaleString()}`;
+            document.getElementById('chart-legend-mooring').innerText = `€${Math.round(tmoor).toLocaleString()}`;
+            document.getElementById('chart-legend-living').innerText = `€${Math.round(tliv).toLocaleString()}`;
+            document.getElementById('chart-legend-maint').innerText = `€${Math.round(maint).toLocaleString()}`;
+            document.getElementById('chart-legend-permits').innerText = `€${Math.round(permits).toLocaleString()}`;
+        }
+
+        // --- İTALYA MANTIĞI ---
+        const iInputFuelPrice = document.getElementById('i-input-fuel-price');
+        const iInputConsumption = document.getElementById('i-input-consumption');
+        const iInputHotel = document.getElementById('i-input-hotel');
+        const iInputFood = document.getElementById('i-input-food');
+        const iInputNights = document.getElementById('i-input-nights');
+        const iInputFerry = document.getElementById('i-input-ferry');
+        const iInputEurTry = document.getElementById('i-input-eur-try');
+        const iRouteSelect = document.getElementById('i-route-select');
+        let italyChart;
+        const routeData = {
+            puglia: { dist: 3200, hotelNights: 12, totalDays: 15, ferryDefault: 750, tolls: 280, museum: 450 },
+            renaissance: { dist: 3600, hotelNights: 17, totalDays: 20, ferryDefault: 850, tolls: 340, museum: 600 },
+            trinacria: { dist: 4100, hotelNights: 13, totalDays: 16, ferryDefault: 800, tolls: 400, museum: 500 }
+        };
+
+        function changeItalyRoute() {
+            const r = routeData[iRouteSelect.value];
+            iInputFerry.value = r.ferryDefault;
+            iInputNights.value = r.hotelNights;
+            updateItalyCalculations();
+        }
+
+        function initItalyChart() {
+            const ctx = document.getElementById('italyChart').getContext('2d');
+            italyChart = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Benzin', 'Feribot', 'Otel', 'Yemek', 'Diğer'],
+                    datasets: [{ data: [0,0,0,0,0], backgroundColor: ['#00D8F6', '#A855F7', '#10B981', '#FF9D00', '#F43F5E'], borderWidth: 0 }]
+                },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, cutout: '72%' }
+            });
+        }
+
+        function updateItalyCalculations() {
+            const r = routeData[iRouteSelect.value];
+            const fp = parseFloat(iInputFuelPrice.value), cons = parseFloat(iInputConsumption.value);
+            const hotel = parseFloat(iInputHotel.value)||0, food = parseFloat(iInputFood.value)||0;
+            const nights = parseInt(iInputNights.value)||r.hotelNights;
+            const days = nights + 3;
+            const ferry = parseFloat(iInputFerry.value)||0, et = parseFloat(iInputEurTry.value)||40;
+
+            document.getElementById('i-val-fuel-price').innerText = `€${fp.toFixed(2)} / L`;
+            document.getElementById('i-val-consumption').innerText = `${cons.toFixed(1)} L`;
+
+            const fcost = (r.dist / 100) * cons * fp, hcost = nights * hotel, fcost_meal = days * food, ocost = r.museum + 110;
+            const grand = fcost + r.tolls + ferry + hcost + fcost_meal + ocost;
+
+            document.getElementById('i-stat-total-eur').innerText = `€${Math.round(grand).toLocaleString()}`;
+            document.getElementById('i-stat-total-try').innerText = `₺${Math.round(grand * et).toLocaleString()} TL`;
+            document.getElementById('i-stat-dist').innerText = `${r.dist.toLocaleString()} km`;
+            document.getElementById('i-stat-nights').innerText = `${nights} Gece`;
+            document.getElementById('i-stat-days-desc').innerText = `Toplam ${days} Gün`;
+            document.getElementById('i-stat-fuel-cost').innerText = `€${Math.round(fcost + ferry).toLocaleString()}`;
+
+            document.getElementById('i-tbl-fuel-basis').innerText = `${r.dist} km @ ${cons} L/100km`;
+            document.getElementById('i-tbl-fuel-eur').innerText = `€${Math.round(fcost).toLocaleString()}`;
+            document.getElementById('i-tbl-fuel-try').innerText = `₺${Math.round(fcost * et).toLocaleString()}`;
+            document.getElementById('i-tbl-tolls-eur').innerText = `€${Math.round(r.tolls).toLocaleString()}`;
+            document.getElementById('i-tbl-tolls-try').innerText = `₺${Math.round(r.tolls * et).toLocaleString()}`;
+            document.getElementById('i-tbl-ferry-eur').innerText = `€${Math.round(ferry).toLocaleString()}`;
+            document.getElementById('i-tbl-ferry-try').innerText = `₺${Math.round(ferry * et).toLocaleString()}`;
+            document.getElementById('i-tbl-hotel-basis').innerText = `${nights} gece @ €${hotel}/gece`;
+            document.getElementById('i-tbl-hotel-eur').innerText = `€${Math.round(hcost).toLocaleString()}`;
+            document.getElementById('i-tbl-hotel-try').innerText = `₺${Math.round(hcost * et).toLocaleString()}`;
+            document.getElementById('i-tbl-food-basis').innerText = `${days} gün @ €${food}/gün`;
+            document.getElementById('i-tbl-food-eur').innerText = `€${Math.round(fcost_meal).toLocaleString()}`;
+            document.getElementById('i-tbl-food-try').innerText = `₺${Math.round(fcost_meal * et).toLocaleString()}`;
+            document.getElementById('i-tbl-other-eur').innerText = `€${Math.round(ocost).toLocaleString()}`;
+            document.getElementById('i-tbl-other-try').innerText = `₺${Math.round(ocost * et).toLocaleString()}`;
+            document.getElementById('i-tbl-grand-eur').innerText = `€${Math.round(grand).toLocaleString()}`;
+            document.getElementById('i-tbl-grand-try').innerText = `₺${Math.round(grand * et).toLocaleString()}`;
+
+            if(italyChart) { italyChart.data.datasets[0].data = [fcost + r.tolls, ferry, hcost, fcost_meal, ocost]; italyChart.update(); }
+            document.getElementById('i-legend-fuel').innerText = `€${Math.round(fcost + r.tolls).toLocaleString()}`;
+            document.getElementById('i-legend-ferry').innerText = `€${Math.round(ferry).toLocaleString()}`;
+            document.getElementById('i-legend-hotel').innerText = `€${Math.round(hcost).toLocaleString()}`;
+            document.getElementById('i-legend-food').innerText = `€${Math.round(fcost_meal).toLocaleString()}`;
+            document.getElementById('i-legend-other').innerText = `€${Math.round(ocost).toLocaleString()}`;
+        }
+
+        // --- YUNANİSTAN MANTIĞI ---
+        const gInputFuelPrice = document.getElementById('g-input-fuel-price');
+        const gInputConsumption = document.getElementById('g-input-consumption');
+        const gInputHotel = document.getElementById('g-input-hotel');
+        const gInputFood = document.getElementById('g-input-food');
+        const gInputNights = document.getElementById('g-input-nights');
+        const gInputTolls = document.getElementById('g-input-tolls');
+        const gInputEurTry = document.getElementById('g-input-eur-try');
+        let greeceChart;
+
+        function initGreeceChart() {
+            const ctx = document.getElementById('greeceChart').getContext('2d');
+            greeceChart = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Benzin', 'Otoban', 'Otel', 'Yemek', 'Diğer'],
+                    datasets: [{ data: [0,0,0,0,0], backgroundColor: ['#00D8F6', '#A855F7', '#10B981', '#FF9D00', '#F43F5E'], borderWidth: 0 }]
+                },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, cutout: '72%' }
+            });
+        }
+
+        function updateGreeceCalculations() {
+            const fp = parseFloat(gInputFuelPrice.value), cons = parseFloat(gInputConsumption.value);
+            const hotel = parseFloat(gInputHotel.value)||0, food = parseFloat(gInputFood.value)||0;
+            const nights = parseInt(gInputNights.value)||10;
+            const days = nights + 1;
+            const tolls = parseFloat(gInputTolls.value)||0, et = parseFloat(gInputEurTry.value)||40;
+
+            document.getElementById('g-val-fuel-price').innerText = `€${fp.toFixed(2)} / L`;
+            document.getElementById('g-val-consumption').innerText = `${cons.toFixed(1)} L`;
+
+            const fcost = (2450 / 100) * cons * fp, hcost = nights * hotel, fcost_meal = days * food, ocost = 360;
+            const grand = fcost + tolls + hcost + fcost_meal + ocost;
+
+            document.getElementById('g-stat-total-eur').innerText = `€${Math.round(grand).toLocaleString()}`;
+            document.getElementById('g-stat-total-try').innerText = `₺${Math.round(grand * et).toLocaleString()} TL`;
+            document.getElementById('g-stat-nights').innerText = `${nights} Gece`;
+            document.getElementById('g-stat-fuel-cost').innerText = `€${Math.round(fcost + tolls).toLocaleString()}`;
+
+            document.getElementById('g-tbl-fuel-basis').innerText = `2450 km @ ${cons} L/100km`;
+            document.getElementById('g-tbl-fuel-eur').innerText = `€${Math.round(fcost).toLocaleString()}`;
+            document.getElementById('g-tbl-fuel-try').innerText = `₺${Math.round(fcost * et).toLocaleString()}`;
+            document.getElementById('g-tbl-tolls-eur').innerText = `€${Math.round(tolls).toLocaleString()}`;
+            document.getElementById('g-tbl-tolls-try').innerText = `₺${Math.round(tolls * et).toLocaleString()}`;
+            document.getElementById('g-tbl-hotel-basis').innerText = `${nights} gece @ €${hotel}/gece`;
+            document.getElementById('g-tbl-hotel-eur').innerText = `€${Math.round(hcost).toLocaleString()}`;
+            document.getElementById('g-tbl-hotel-try').innerText = `₺${Math.round(hcost * et).toLocaleString()}`;
+            document.getElementById('g-tbl-food-basis').innerText = `${days} gün @ €${food}/gün`;
+            document.getElementById('g-tbl-food-eur').innerText = `€${Math.round(fcost_meal).toLocaleString()}`;
+            document.getElementById('g-tbl-food-try').innerText = `₺${Math.round(fcost_meal * et).toLocaleString()}`;
+            document.getElementById('g-tbl-other-eur').innerText = `€${Math.round(ocost).toLocaleString()}`;
+            document.getElementById('g-tbl-other-try').innerText = `₺${Math.round(ocost * et).toLocaleString()}`;
+            document.getElementById('g-tbl-grand-eur').innerText = `€${Math.round(grand).toLocaleString()}`;
+            document.getElementById('g-tbl-grand-try').innerText = `₺${Math.round(grand * et).toLocaleString()}`;
+
+            if(greeceChart) { greeceChart.data.datasets[0].data = [fcost, tolls, hcost, fcost_meal, ocost]; greeceChart.update(); }
+            document.getElementById('g-legend-fuel').innerText = `€${Math.round(fcost).toLocaleString()}`;
+            document.getElementById('g-legend-tolls').innerText = `€${Math.round(tolls).toLocaleString()}`;
+            document.getElementById('g-legend-hotel').innerText = `€${Math.round(hcost).toLocaleString()}`;
+            document.getElementById('g-legend-food').innerText = `€${Math.round(fcost_meal).toLocaleString()}`;
+            document.getElementById('g-legend-other').innerText = `€${Math.round(ocost).toLocaleString()}`;
+        }
+
+        // --- İSPANYA MANTIĞI ---
+        const sInputFuelPrice = document.getElementById('s-input-fuel-price');
+        const sInputConsumption = document.getElementById('s-input-consumption');
+        const sInputHotel = document.getElementById('s-input-hotel');
+        const sInputFood = document.getElementById('s-input-food');
+        const sInputNights = document.getElementById('s-input-nights');
+        const sInputTolls = document.getElementById('s-input-tolls');
+        const sInputEurTry = document.getElementById('s-input-eur-try');
+        let spainChart;
+
+        function initSpainChart() {
+            const ctx = document.getElementById('spainChart').getContext('2d');
+            spainChart = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Benzin', 'Otoban', 'Otel', 'Yemek', 'Müze & Diğer'],
+                    datasets: [{ data: [0,0,0,0,0], backgroundColor: ['#00D8F6', '#A855F7', '#10B981', '#FF9D00', '#F43F5E'], borderWidth: 0 }]
+                },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, cutout: '72%' }
+            });
+        }
+
+        function updateSpainCalculations() {
+            const fp = parseFloat(sInputFuelPrice.value), cons = parseFloat(sInputConsumption.value);
+            const hotel = parseFloat(sInputHotel.value)||0, food = parseFloat(sInputFood.value)||0;
+            const nights = parseInt(sInputNights.value)||16;
+            const days = nights + 1;
+            const tolls = parseFloat(sInputTolls.value)||0, et = parseFloat(sInputEurTry.value)||40;
+
+            document.getElementById('s-val-fuel-price').innerText = `€${fp.toFixed(2)} / L`;
+            document.getElementById('s-val-consumption').innerText = `${cons.toFixed(1)} L`;
+
+            const fcost = (3800 / 100) * cons * fp, hcost = nights * hotel, fcost_meal = days * food, ocost = 350;
+            const grand = fcost + tolls + hcost + fcost_meal + ocost;
+
+            document.getElementById('s-stat-total-eur').innerText = `€${Math.round(grand).toLocaleString()}`;
+            document.getElementById('s-stat-total-try').innerText = `₺${Math.round(grand * et).toLocaleString()} TL`;
+            document.getElementById('s-stat-nights').innerText = `${nights} Gece`;
+            document.getElementById('s-stat-days-desc').innerText = `Toplam ${days} Gün`;
+            document.getElementById('s-stat-fuel-cost').innerText = `€${Math.round(fcost + tolls).toLocaleString()}`;
+
+            document.getElementById('s-tbl-fuel-basis').innerText = `3800 km @ ${cons} L/100km`;
+            document.getElementById('s-tbl-fuel-eur').innerText = `€${Math.round(fcost).toLocaleString()}`;
+            document.getElementById('s-tbl-fuel-try').innerText = `₺${Math.round(fcost * et).toLocaleString()}`;
+            document.getElementById('s-tbl-tolls-eur').innerText = `€${Math.round(tolls).toLocaleString()}`;
+            document.getElementById('s-tbl-tolls-try').innerText = `₺${Math.round(tolls * et).toLocaleString()}`;
+            document.getElementById('s-tbl-hotel-basis').innerText = `${nights} gece @ €${hotel}/gece`;
+            document.getElementById('s-tbl-hotel-eur').innerText = `€${Math.round(hcost).toLocaleString()}`;
+            document.getElementById('s-tbl-hotel-try').innerText = `₺${Math.round(hcost * et).toLocaleString()}`;
+            document.getElementById('s-tbl-food-basis').innerText = `${days} gün @ €${food}/gün`;
+            document.getElementById('s-tbl-food-eur').innerText = `€${Math.round(fcost_meal).toLocaleString()}`;
+            document.getElementById('s-tbl-food-try').innerText = `₺${Math.round(fcost_meal * et).toLocaleString()}`;
+            document.getElementById('s-tbl-other-eur').innerText = `€${Math.round(ocost).toLocaleString()}`;
+            document.getElementById('s-tbl-other-try').innerText = `₺${Math.round(ocost * et).toLocaleString()}`;
+            document.getElementById('s-tbl-grand-eur').innerText = `€${Math.round(grand).toLocaleString()}`;
+            document.getElementById('s-tbl-grand-try').innerText = `₺${Math.round(grand * et).toLocaleString()}`;
+
+            if(spainChart) { spainChart.data.datasets[0].data = [fcost, tolls, hcost, fcost_meal, ocost]; spainChart.update(); }
+            document.getElementById('s-legend-fuel').innerText = `€${Math.round(fcost).toLocaleString()}`;
+            document.getElementById('s-legend-tolls').innerText = `€${Math.round(tolls).toLocaleString()}`;
+            document.getElementById('s-legend-hotel').innerText = `€${Math.round(hcost).toLocaleString()}`;
+            document.getElementById('s-legend-food').innerText = `€${Math.round(fcost_meal).toLocaleString()}`;
+            document.getElementById('s-legend-other').innerText = `€${Math.round(ocost).toLocaleString()}`;
+        }
+
+        // Event Listeners
+        [inputFuelPrice, inputUpstreamCons, inputDownstreamCons, inputOutboundDays, inputReturnDays, inputMarinaFee, inputLivingCost, inputPermits, inputMaintenance, inputEurTry].forEach(el => el.addEventListener('input', updateCalculations));
+        [iInputFuelPrice, iInputConsumption, iInputHotel, iInputFood, iInputNights, iInputFerry, iInputEurTry].forEach(el => el.addEventListener('input', updateItalyCalculations));
+        [gInputFuelPrice, gInputConsumption, gInputHotel, gInputFood, gInputNights, gInputTolls, gInputEurTry].forEach(el => el.addEventListener('input', updateGreeceCalculations));
+        [sInputFuelPrice, sInputConsumption, sInputHotel, sInputFood, sInputNights, sInputTolls, sInputEurTry].forEach(el => el.addEventListener('input', updateSpainCalculations));
+
+        document.getElementById('btn-reset').addEventListener('click', () => { updateCalculations(); });
+
+        window.addEventListener('DOMContentLoaded', () => {
+            initChart(); updateCalculations();
+            initItalyChart(); updateItalyCalculations();
+            initGreeceChart(); updateGreeceCalculations();
+            initSpainChart(); updateSpainCalculations();
+        });
+    </script>
+</body>
+</html>
